@@ -4,7 +4,7 @@ import {
   isFavorite,
   removeFavorite,
 } from "@/lib/favorites";
-import { getDailyPrayers, Prayer } from "@/lib/prayers";
+import { getDailyPrayers, getDailyTheme, Prayer } from "@/lib/prayers";
 import { getUser, StoredUser } from "@/lib/userStorage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -126,11 +126,14 @@ export default function HomeScreen() {
   const [verseFaved, setVerseFaved] = useState(false);
   const [showPrayers, setShowPrayers] = useState(false);
   const [prayers, setPrayers] = useState<Prayer[]>([]);
+  const [dailyTheme, setDailyTheme] = useState({ title: "", focus: "" });
 
   useEffect(() => {
     getUser()
       .then(setUser)
       .catch(() => {});
+    setDailyTheme(getDailyTheme());
+    getDailyPrayers().then(setPrayers);
   }, []);
 
   useEffect(() => {
@@ -434,19 +437,15 @@ export default function HomeScreen() {
                   <Text className="text-[18px]">🙏</Text>
                 </View>
                 <Text className="text-[16px] font-bold text-[#1A1A1A]">
-                  Strength and Wisdom
+                  {dailyTheme.title || "Strength and Wisdom"}
                 </Text>
               </View>
               <Text className="mb-4 text-[13px] leading-[21px] text-[#4A4A4A]">
-                Take a moment to pray for guidance, peace, and courage for the
-                day ahead.
+                {dailyTheme.focus ||
+                  "Take a moment to pray for guidance, peace, and courage for the day ahead."}
               </Text>
               <TouchableOpacity
-                onPress={async () => {
-                  if (!showPrayers) {
-                    const list = await getDailyPrayers();
-                    setPrayers(list);
-                  }
+                onPress={() => {
                   setShowPrayers(!showPrayers);
                 }}
                 className="self-start rounded-[12px] bg-[#0E3B2E] px-5 py-[11px]"

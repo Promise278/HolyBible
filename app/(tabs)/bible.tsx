@@ -37,14 +37,6 @@ const BIBLE_VERSIONS = [
     light: "#EAF5EF",
   },
   {
-    id: "78a9f6124f344018-01",
-    label: "NIV",
-    name: "New International Version",
-    description: "Modern, accurate & easy to understand",
-    color: "#1D4ED8",
-    light: "#DBEAFE",
-  },
-  {
     id: "65eec8e0b60e656b-01",
     label: "MSG",
     name: "The Message",
@@ -347,12 +339,18 @@ export default function Bible() {
         await stopSpeech();
         return;
       }
-      await stopSpeech();
-      setSpeakingVerse(verse.id);
-      setSpeaking(true);
-      await speakWithElevenLabs(verse.text);
-      setSpeaking(false);
-      setSpeakingVerse(null);
+      try {
+        await stopSpeech();
+        setSpeakingVerse(verse.id);
+        setSpeaking(true);
+        await speakWithElevenLabs(verse.text);
+      } catch (e: any) {
+        console.error("Audio Verse Error:", e);
+        setError(`Audio failed: ${e.message}`);
+      } finally {
+        setSpeaking(false);
+        setSpeakingVerse(null);
+      }
     },
     [speakingVerse, speaking, stopSpeech],
   );
@@ -363,14 +361,20 @@ export default function Bible() {
       return;
     }
     if (!verses.length) return;
-    setSpeaking(true);
-    setSpeakingVerse("ALL");
-    const fullText = verses
-      .map((v) => `Verse ${v.number}. ${v.text}`)
-      .join(" ");
-    await speakWithElevenLabs(fullText);
-    setSpeaking(false);
-    setSpeakingVerse(null);
+    try {
+      setSpeaking(true);
+      setSpeakingVerse("ALL");
+      const fullText = verses
+        .map((v) => `Verse ${v.number}. ${v.text}`)
+        .join(" ");
+      await speakWithElevenLabs(fullText);
+    } catch (e: any) {
+      console.error("Audio Chapter Error:", e);
+      setError(`Audio failed: ${e.message}`);
+    } finally {
+      setSpeaking(false);
+      setSpeakingVerse(null);
+    }
   }, [verses, speaking, stopSpeech]);
 
   const handleAiBreakdown = useCallback(async () => {
@@ -725,7 +729,7 @@ export default function Bible() {
           <Text className="text-white font-bold text-sm">
             {speaking && speakingVerse === "ALL"
               ? "⏹ Stop Audio"
-              : "🔊 Listen with Premium Voice"}
+              : "Listen with Voice"}
           </Text>
         </TouchableOpacity>
 

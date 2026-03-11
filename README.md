@@ -2,7 +2,7 @@
 
 A premium, modern Bible reading experience built with React Native and Expo. Dive deep into the Word with AI-powered insights and a high-quality human-like voice reader.
 
-![Holy Bible Console](./assets/images/holybiblesolana.png)
+![Holy Bible Console](./assets/images/biblewithbg.png)
 
 ## ✨ Features
 

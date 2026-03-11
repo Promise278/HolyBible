@@ -4,7 +4,7 @@
     "slug": "HolyBible",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/holybiblesolana.png",
+    "icon": "./assets/images/biblewithbg.png",
     "scheme": "holybible",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,23 +14,23 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/holybiblesolana-removebg-preview.png",
-        "backgroundImage": "./assets/images/holybiblesolana-removebg-preview.png",
-        "monochromeImage": "./assets/images/holybiblesolana-removebg-preview.png"
+        "foregroundImage": "./assets/images/biblewithbg.png",
+        "backgroundImage": "./assets/images/biblewithbg.png",
+        "monochromeImage": "./assets/images/biblewithbg.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/holybiblesolana.png"
+      "favicon": "./assets/images/biblewithbg.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/biblewithbg.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",

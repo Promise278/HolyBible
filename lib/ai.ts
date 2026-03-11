@@ -1,60 +1,66 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
-const genAI = new GoogleGenerativeAI(
-  process.env.EXPO_PUBLIC_GEMINI_API_KEY || "",
-);
-
-export interface BibleBreakdown {
+export type BibleBreakdown = {
   summary: string;
   context: string;
   keyTakeaways: string[];
   application: string;
+};
+
+const groqApiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
+
+if (!groqApiKey) {
+  throw new Error("Missing EXPO_PUBLIC_GROQ_API_KEY");
 }
+
+const client = new OpenAI({
+  apiKey: groqApiKey,
+  baseURL: "https://api.groq.com/openai/v1",
+});
 
 export async function getBibleBreakdown(
   book: string,
   chapter: string,
   text: string,
-): Promise<BibleBreakdown | null> {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const prompt = `
-      You are a biblical scholar. Break down the following Bible text (${book} Chapter ${chapter}).
-      Provide the response in raw JSON format with these exact keys:
-      "summary": A concise summary of the chapter.
-      "context": Historical or cultural context relevant to these verses.
-      "keyTakeaways": An array of 3-5 bullet points of main themes.
-      "application": A practical daily application for a modern reader.
+): Promise<BibleBreakdown> {
+  const prompt = `
+You are a biblical study assistant.
+Give a short, faithful, easy-to-understand explanation of ${book} chapter ${chapter}.
 
-      Text:
-      ${text}
-    `;
+Passage:
+${text}
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const cleanJson = response
-      .text()
-      .replace(/```json|```/g, "")
-      .trim();
-    return JSON.parse(cleanJson);
-  } catch (error) {
-    console.error("AI Breakdown Error:", error);
-    return null;
-  }
+Return valid JSON in exactly this shape:
+{
+  "summary": "short summary",
+  "context": "historical and spiritual context",
+  "keyTakeaways": ["point 1", "point 2", "point 3"],
+  "application": "simple daily life application"
 }
+`;
 
-export async function getVerseInsight(
-  reference: string,
-  text: string,
-): Promise<string | null> {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const prompt = `Provide a deep spiritual insight for the following verse (${reference}): "${text}". Keep it to 2-3 sentences.`;
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text().trim();
-  } catch (error) {
-    console.error("Verse Insight Error:", error);
-    return null;
-  }
+  const completion = await client.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    temperature: 0.4,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You explain Bible passages clearly, faithfully, and practically. Always return valid JSON only.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+  });
+
+  const content = completion.choices[0]?.message?.content?.trim() || "";
+
+  const cleaned = content
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+  return JSON.parse(cleaned);
 }
