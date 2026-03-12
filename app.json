@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/biblewithbg.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.promiseobi.HolyBible"
     },
     "web": {
       "output": "static",
@@ -44,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1871c306-99f2-4cd9-8537-e71cbefe4e03"
+      }
     }
   }
 }
