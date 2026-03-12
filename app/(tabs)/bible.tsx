@@ -1,8 +1,5 @@
 import { BibleBreakdown, getBibleBreakdown } from "@/lib/ai";
-import {
-  speakWithElevenLabs,
-  stopSpeech as stopElevenLabs,
-} from "@/lib/elevenlabs";
+import { loadPreferredVoice, speakText, stopVoice } from "@/lib/elevenlabs";
 import {
   addFavorite,
   FavoriteVerse,
@@ -47,81 +44,81 @@ const BIBLE_VERSIONS = [
 ];
 
 // ─── OT / NT Book ID sets ─────────────────────────────────────────────────────
-const OT_BOOK_IDS = new Set([
-  "GEN",
-  "EXO",
-  "LEV",
-  "NUM",
-  "DEU",
-  "JOS",
-  "JDG",
-  "RUT",
-  "1SA",
-  "2SA",
-  "1KI",
-  "2KI",
-  "1CH",
-  "2CH",
-  "EZR",
-  "NEH",
-  "EST",
-  "JOB",
-  "PSA",
-  "PRO",
-  "ECC",
-  "SNG",
-  "ISA",
-  "JER",
-  "LAM",
-  "EZK",
-  "DAN",
-  "HOS",
-  "JOL",
-  "AMO",
-  "OBA",
-  "JON",
-  "MIC",
-  "NAH",
-  "HAB",
-  "ZEP",
-  "HAG",
-  "ZEC",
-  "MAL",
+const OT_BOOK_NAMES = new Set([
+  "Genesis",
+  "Exodus",
+  "Leviticus",
+  "Numbers",
+  "Deuteronomy",
+  "Joshua",
+  "Judges",
+  "Ruth",
+  "1 Samuel",
+  "2 Samuel",
+  "1 Kings",
+  "2 Kings",
+  "1 Chronicles",
+  "2 Chronicles",
+  "Ezra",
+  "Nehemiah",
+  "Esther",
+  "Job",
+  "Psalms",
+  "Proverbs",
+  "Ecclesiastes",
+  "Song of Solomon",
+  "Isaiah",
+  "Jeremiah",
+  "Lamentations",
+  "Ezekiel",
+  "Daniel",
+  "Hosea",
+  "Joel",
+  "Amos",
+  "Obadiah",
+  "Jonah",
+  "Micah",
+  "Nahum",
+  "Habakkuk",
+  "Zephaniah",
+  "Haggai",
+  "Zechariah",
+  "Malachi",
 ]);
 
-const NT_BOOK_IDS = new Set([
-  "MAT",
-  "MRK",
-  "LUK",
-  "JHN",
-  "ACT",
-  "ROM",
-  "1CO",
-  "2CO",
-  "GAL",
-  "EPH",
-  "PHP",
-  "COL",
-  "1TH",
-  "2TH",
-  "1TI",
-  "2TI",
-  "TIT",
-  "PHM",
-  "HEB",
-  "JAS",
-  "1PE",
-  "2PE",
-  "1JN",
-  "2JN",
-  "3JN",
-  "JUD",
-  "REV",
+const NT_BOOK_NAMES = new Set([
+  "Matthew",
+  "Mark",
+  "Luke",
+  "John",
+  "Acts",
+  "Romans",
+  "1 Corinthians",
+  "2 Corinthians",
+  "Galatians",
+  "Ephesians",
+  "Philippians",
+  "Colossians",
+  "1 Thessalonians",
+  "2 Thessalonians",
+  "1 Timothy",
+  "2 Timothy",
+  "Titus",
+  "Philemon",
+  "Hebrews",
+  "James",
+  "1 Peter",
+  "2 Peter",
+  "1 John",
+  "2 John",
+  "3 John",
+  "Jude",
+  "Revelation",
 ]);
 
-const GOSPEL_IDS = new Set(["MAT", "MRK", "LUK", "JHN"]);
-const PSALM_IDS = new Set(["PSA"]);
-const PROVERB_IDS = new Set(["PRO"]);
+const GOSPEL_BOOK_NAMES = new Set(["Matthew", "Mark", "Luke", "John"]);
+const PSALM_BOOK_NAMES = new Set(["Psalms"]);
+const PROVERB_BOOK_NAMES = new Set(["Proverbs"]);
 
 // ─── Filter definitions ───────────────────────────────────────────────────────
 type FilterKey =
@@ -134,38 +131,38 @@ type FilterKey =
 
 const FILTER_META: Record<
   FilterKey,
-  { label: string; color: string; light: string; ids: Set<string> | null }
+  { label: string; color: string; light: string; names: Set<string> | null }
 > = {
-  all: { label: "All Books", color: "#1A1A1A", light: "#F5F5F5", ids: null },
+  all: { label: "All Books", color: "#1A1A1A", light: "#F5F5F5", names: null },
   "old-testament": {
     label: "Old Testament",
     color: "#78350F",
     light: "#FEF3C7",
-    ids: OT_BOOK_IDS,
+    names: OT_BOOK_NAMES,
   },
   "new-testament": {
     label: "New Testament",
     color: "#1D4ED8",
     light: "#DBEAFE",
-    ids: NT_BOOK_IDS,
+    names: NT_BOOK_NAMES,
   },
   psalms: {
     label: "Psalms",
     color: "#0E3B2E",
     light: "#DCFCE7",
-    ids: PSALM_IDS,
+    names: PSALM_BOOK_NAMES,
   },
   proverbs: {
     label: "Proverbs",
     color: "#7C3AED",
     light: "#EDE9FE",
-    ids: PROVERB_IDS,
+    names: PROVERB_BOOK_NAMES,
   },
   gospels: {
     label: "Gospels",
     color: "#B45309",
     light: "#FEF9C3",
-    ids: GOSPEL_IDS,
+    names: GOSPEL_BOOK_NAMES,
   },
 };
 
@@ -236,7 +233,7 @@ export default function Bible() {
   const [aiBreakdown, setAiBreakdown] = useState<BibleBreakdown | null>(null);
 
   const stopSpeech = useCallback(async () => {
-    await stopElevenLabs();
+    stopVoice();
     setSpeaking(false);
     setSpeakingVerse(null);
   }, []);
@@ -314,10 +311,10 @@ export default function Bible() {
 
   useEffect(() => {
     const meta = FILTER_META[activeFilter];
-    if (!meta.ids) {
+    if (!meta.names) {
       setBooks(allBooks);
     } else {
-      setBooks(allBooks.filter((b) => meta.ids!.has(b.id)));
+      setBooks(allBooks.filter((b) => meta.names!.has(b.name)));
     }
   }, [allBooks, activeFilter]);
 
@@ -327,26 +324,27 @@ export default function Bible() {
       allBooks.length > 0 &&
       !selectedBook
     ) {
-      const targetId = activeFilter === "psalms" ? "PSA" : "PRO";
-      const book = allBooks.find((b) => b.id === targetId);
+      const targetId = activeFilter === "psalms" ? "psalms" : "proverbs";
+      const book = allBooks.find((b) => b.name === targetId);
       if (book) handleSelectBook(book);
     }
   }, [activeFilter, allBooks, selectedBook, handleSelectBook]);
 
   const handleSpeakVerse = useCallback(
     async (verse: Verse) => {
-      if (speakingVerse === verse.id && speaking) {
-        await stopSpeech();
-        return;
-      }
       try {
+        if (speakingVerse === verse.id && speaking) {
+          await stopSpeech();
+          return;
+        }
+
         await stopSpeech();
         setSpeakingVerse(verse.id);
         setSpeaking(true);
-        await speakWithElevenLabs(verse.text);
-      } catch (e: any) {
-        console.error("Audio Verse Error:", e);
-        setError(`Audio failed: ${e.message}`);
+
+        await speakText(verse.text);
+      } catch (error) {
+        console.log("Voice error:", error);
       } finally {
         setSpeaking(false);
         setSpeakingVerse(null);
@@ -356,21 +354,24 @@ export default function Bible() {
   );
 
   const handleReadChapter = useCallback(async () => {
-    if (speaking) {
-      await stopSpeech();
-      return;
-    }
-    if (!verses.length) return;
     try {
+      if (speaking) {
+        await stopSpeech();
+        return;
+      }
+
+      if (!verses.length) return;
+
       setSpeaking(true);
       setSpeakingVerse("ALL");
+
       const fullText = verses
         .map((v) => `Verse ${v.number}. ${v.text}`)
         .join(" ");
-      await speakWithElevenLabs(fullText);
-    } catch (e: any) {
-      console.error("Audio Chapter Error:", e);
-      setError(`Audio failed: ${e.message}`);
+
+      await speakText(fullText);
+    } catch (error) {
+      console.log("Read chapter error:", error);
     } finally {
       setSpeaking(false);
       setSpeakingVerse(null);
@@ -633,23 +634,36 @@ export default function Bible() {
                     {book.nameLong}
                   </Text>
                 </View>
-                <View
-                  className="rounded-full px-3 py-[4px]"
-                  style={{
-                    backgroundColor: OT_BOOK_IDS.has(book.id)
-                      ? "#FEF3C7"
-                      : "#DCFCE7",
-                  }}
-                >
-                  <Text
-                    className="text-[10px] font-bold"
-                    style={{
-                      color: OT_BOOK_IDS.has(book.id) ? "#78350F" : "#065F46",
-                    }}
-                  >
-                    {OT_BOOK_IDS.has(book.id) ? "OT" : "NT"}
-                  </Text>
-                </View>
+                {(() => {
+                  const isOT = OT_BOOK_NAMES.has(book.name);
+                  const isNT = NT_BOOK_NAMES.has(book.name);
+
+                  const badgeLabel = isOT ? "OT" : isNT ? "NT" : "BOOK";
+                  const badgeBg = isOT
+                    ? "#FEF3C7"
+                    : isNT
+                      ? "#DCFCE7"
+                      : "#E5E7EB";
+                  const badgeText = isOT
+                    ? "#78350F"
+                    : isNT
+                      ? "#065F46"
+                      : "#374151";
+
+                  return (
+                    <View
+                      className="rounded-full px-3 py-[4px]"
+                      style={{ backgroundColor: badgeBg }}
+                    >
+                      <Text
+                        className="text-[10px] font-bold"
+                        style={{ color: badgeText }}
+                      >
+                        {badgeLabel}
+                      </Text>
+                    </View>
+                  );
+                })()}
               </TouchableOpacity>
             ))}
           </View>

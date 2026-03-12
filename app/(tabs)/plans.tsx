@@ -149,13 +149,13 @@ export default function Plans() {
                 )}
                 <TouchableOpacity
                   onPress={() => handleUpdateProgress(plan.id)}
-                  className="rounded-full px-5 py-2"
+                  className="rounded-full px-3 py-2"
                   style={{
                     backgroundColor: pct === 100 ? "#0E3B2E" : "#E5C77A",
                   }}
                 >
                   <Text
-                    className="text-[12px] font-bold"
+                    className="text-[10px] font-bold"
                     style={{ color: pct === 100 ? "#E5C77A" : "#0E3B2E" }}
                   >
                     {pct === 100

@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type FavoriteVerse = {
-  id: string;          // e.g. "JHN.3.16"
-  book: string;        // e.g. "John"
-  chapter: string;     // e.g. "3"
-  verse: string;       // e.g. "16"
-  text: string;        // the actual verse text
-  savedAt: number;     // Date.now()
+  id: string; 
+  book: string;
+  chapter: string;
+  verse: string;   
+  text: string;    
+  savedAt: number;  
 };
 
 const KEY = 'HOLY_BIBLE_FAVORITES';

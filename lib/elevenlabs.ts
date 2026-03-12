@@ -1,110 +1,95 @@
-import { Audio } from "expo-av";
+import * as Speech from "expo-speech";
 
-const ELEVENLABS_API_KEY = (
-  process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY || ""
-).trim();
+let selectedVoice: string | undefined;
+let isStopped = false;
 
-// Thomas - Calm, professional narrator (American)
-const VOICE_ID = "GBv7mTt0atIp3Br8iCZE";
-
-let soundObject: Audio.Sound | null = null;
-
-export async function speakWithElevenLabs(text: string): Promise<void> {
-  if (!ELEVENLABS_API_KEY) {
-    console.warn("ElevenLabs API key is missing");
-    return;
-  }
-
+export async function loadPreferredVoice() {
   try {
-    await stopSpeech();
+    const voices = await Speech.getAvailableVoicesAsync();
 
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "xi-api-key": ELEVENLABS_API_KEY,
-        },
-        body: JSON.stringify({
-          text,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.0,
-            use_speaker_boost: true,
-          },
-        }),
-      },
+    const preferredKeywords = [
+      "daniel",
+      "male",
+      "enhanced",
+      "premium",
+      "natural",
+      "alex",
+      "fred",
+    ];
+
+    const englishVoices = voices.filter(
+      (voice) =>
+        voice.language?.toLowerCase().startsWith("en") && !!voice.identifier
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("ElevenLabs API Error:", response.status, errorText);
-      try {
-        const errJson = JSON.parse(errorText);
-        if (errJson.detail?.code === "quota_exceeded") {
-          throw new Error(
-            "You have run out of ElevenLabs credits for this large request. Please try listening to individual verses instead of the whole chapter, or upgrade your plan at elevenlabs.io",
-          );
-        }
-      } catch (e: any) {
-        if (e.message.includes("ElevenLabs credits")) throw e;
-      }
-      throw new Error(`ElevenLabs error ${response.status}: ${errorText}`);
-    }
+    const best =
+      englishVoices.find((voice) => {
+        const name =
+          `${voice.name ?? ""} ${voice.identifier ?? ""}`.toLowerCase();
+        return preferredKeywords.some((keyword) => name.includes(keyword));
+      }) || englishVoices[0];
 
-    const blob = await response.blob();
-
-    // In React Native, FileReader is the most reliable way to handle blobs for audio
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64data = reader.result as string;
-        try {
-          await Audio.setAudioModeAsync({
-            playsInSilentModeIOS: true,
-            staysActiveInBackground: false,
-            shouldDuckAndroid: true,
-          });
-
-          const { sound } = await Audio.Sound.createAsync(
-            { uri: base64data },
-            { shouldPlay: true },
-          );
-
-          soundObject = sound;
-
-          sound.setOnPlaybackStatusUpdate((status) => {
-            if (status.isLoaded && status.didJustFinish) {
-              sound.unloadAsync();
-              soundObject = null;
-            }
-          });
-          resolve();
-        } catch (e) {
-          console.error("Audio playback error:", e);
-          reject(e);
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+    selectedVoice = best?.identifier;
+    return best;
   } catch (error) {
-    console.error("ElevenLabs Network or Playback Error:", error);
-    throw error;
+    console.log("Could not load voices:", error);
+    selectedVoice = undefined;
+    return undefined;
   }
 }
 
-export async function stopSpeech(): Promise<void> {
-  if (soundObject) {
-    try {
-      await soundObject.stopAsync();
-      await soundObject.unloadAsync();
-      soundObject = null;
-    } catch (e) {
-      console.warn("Error stopping sound:", e);
-    }
+function splitTextIntoChunks(text: string, maxLength = 3500): string[] {
+  const chunks: string[] = [];
+  let remaining = text.trim();
+
+  while (remaining.length > maxLength) {
+    let slice = remaining.slice(0, maxLength);
+    const lastPeriod = slice.lastIndexOf(".");
+    const lastSpace = slice.lastIndexOf(" ");
+
+    let cutIndex = lastPeriod > 0 ? lastPeriod + 1 : lastSpace;
+    if (cutIndex <= 0) cutIndex = maxLength;
+
+    chunks.push(remaining.slice(0, cutIndex).trim());
+    remaining = remaining.slice(cutIndex).trim();
   }
+
+  if (remaining.length > 0) {
+    chunks.push(remaining);
+  }
+
+  return chunks;
+}
+
+function speakChunk(chunk: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    Speech.speak(chunk, {
+      language: "en-US",
+      voice: selectedVoice,
+      rate: 0.86,
+      pitch: 0.92,
+      onDone: () => resolve(),
+      onStopped: () => resolve(),
+      onError: (error) => reject(error),
+    });
+  });
+}
+
+export async function speakText(text: string) {
+  if (!text?.trim()) return;
+
+  isStopped = false;
+  Speech.stop();
+
+  const chunks = splitTextIntoChunks(text, 3500);
+
+  for (const chunk of chunks) {
+    if (isStopped) break;
+    await speakChunk(chunk);
+  }
+}
+
+export function stopVoice() {
+  isStopped = true;
+  Speech.stop();
 }
