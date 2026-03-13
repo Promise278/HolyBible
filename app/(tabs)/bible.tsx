@@ -310,6 +310,10 @@ export default function Bible() {
   }, [version.id, stopSpeech, loadBooks]);
 
   useEffect(() => {
+    loadPreferredVoice();
+  }, []);
+
+  useEffect(() => {
     const meta = FILTER_META[activeFilter];
     if (!meta.names) {
       setBooks(allBooks);
@@ -333,14 +337,18 @@ export default function Bible() {
   const handleSpeakVerse = useCallback(
     async (verse: Verse) => {
       try {
-        if (speakingVerse === verse.id && speaking) {
+        if (speaking && speakingVerse === verse.id) {
           await stopSpeech();
           return;
         }
 
         await stopSpeech();
-        setSpeakingVerse(verse.id);
         setSpeaking(true);
+        setSpeakingVerse(verse.id);
+
+        const announcement = `${selectedBook?.name ?? ""} chapter ${selectedChapter?.number ?? ""} verse ${verse.number}`;
+
+        await speakText(announcement);
 
         await speakText(verse.text);
       } catch (error) {
@@ -350,20 +358,25 @@ export default function Bible() {
         setSpeakingVerse(null);
       }
     },
-    [speakingVerse, speaking, stopSpeech],
+    [speaking, speakingVerse, stopSpeech, selectedBook, selectedChapter],
   );
 
   const handleReadChapter = useCallback(async () => {
     try {
-      if (speaking) {
+      if (speaking && speakingVerse === "ALL") {
         await stopSpeech();
         return;
       }
 
-      if (!verses.length) return;
+      if (!verses.length || !selectedBook || !selectedChapter) return;
 
+      await stopSpeech();
       setSpeaking(true);
       setSpeakingVerse("ALL");
+
+      const chapterAnnouncement = `${selectedBook.name} chapter ${selectedChapter.number}`;
+
+      await speakText(chapterAnnouncement);
 
       const fullText = verses
         .map((v) => `Verse ${v.number}. ${v.text}`)
@@ -376,7 +389,14 @@ export default function Bible() {
       setSpeaking(false);
       setSpeakingVerse(null);
     }
-  }, [verses, speaking, stopSpeech]);
+  }, [
+    verses,
+    speaking,
+    speakingVerse,
+    stopSpeech,
+    selectedBook,
+    selectedChapter,
+  ]);
 
   const handleAiBreakdown = useCallback(async () => {
     if (!selectedBook || !selectedChapter || !verses.length) return;

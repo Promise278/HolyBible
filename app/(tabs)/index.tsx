@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Share,
+  StatusBar,
   Text,
   TouchableOpacity,
   View,
@@ -198,6 +199,11 @@ export default function HomeScreen() {
 
   return (
     <>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#0E3B2E"
+        translucent={false}
+      />
       <SafeAreaView
         className="flex-1 mt-12 bg-[#F6F4EE]"
         edges={["bottom", "left", "right"]}
