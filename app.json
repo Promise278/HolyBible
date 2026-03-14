@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "HolyBible",
-    "slug": "HolyBible",
+    "slug": "holybible",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/biblewithbg.png",
@@ -49,8 +49,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "1871c306-99f2-4cd9-8537-e71cbefe4e03"
+        "projectId": "3dc29965-2713-4dc9-959e-431bc398da2b"
       }
-    }
+    },
+    "owner": "promiseobi"
   }
 }
